@@ -1,13 +1,14 @@
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
+using JobAggregator.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Formatting.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
-using Microsoft.EntityFrameworkCore;
-using JobAggregator.Infrastructure.Data;
-using Serilog;
-using Serilog.Formatting.Json;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,5 +43,6 @@ if (app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
