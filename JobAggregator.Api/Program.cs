@@ -14,6 +14,7 @@ using JobAggregator.Infrastructure.Scrapers;
 using JobAggregator.Infrastructure.Services;
 using StackExchange.Redis;
 using System;
+using System.Net.Http;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,7 +46,17 @@ try
 builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp => redis);
 builder.Services.AddScoped<JobAggregator.Application.Interfaces.ICacheService, JobAggregator.Infrastructure.Caching.RedisCacheService>();
 
+// Register HttpClients
+builder.Services.AddHttpClient("HnJobs", client => {
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddHttpClient("RemoteOk", client => {
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
 // Register scrapers
+builder.Services.AddScoped<IScraper, HnJobsScraper>();
+builder.Services.AddScoped<IScraper, RemoteOkScraper>();
 builder.Services.AddScoped<IScraper, IndeedScraper>();
 builder.Services.AddScoped<IScraper, LinkedInScraper>();
 
@@ -80,9 +91,19 @@ catch (Exception ex)
     // Register in-memory cache service as fallback
     builder.Services.AddScoped<JobAggregator.Application.Interfaces.ICacheService, JobAggregator.Infrastructure.Caching.InMemoryCacheService>();
     
-    // Register scrapers
-    builder.Services.AddScoped<IScraper, IndeedScraper>();
-    builder.Services.AddScoped<IScraper, LinkedInScraper>();
+    // Register HttpClients
+builder.Services.AddHttpClient("HnJobs", client => {
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddHttpClient("RemoteOk", client => {
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
+// Register scrapers
+builder.Services.AddScoped<IScraper, HnJobsScraper>();
+builder.Services.AddScoped<IScraper, RemoteOkScraper>();
+builder.Services.AddScoped<IScraper, IndeedScraper>();
+builder.Services.AddScoped<IScraper, LinkedInScraper>();
     
     // Register JobSearchService
     builder.Services.AddScoped<IJobSearchService, JobSearchService>();
@@ -109,6 +130,7 @@ healthChecks.AddCheck(
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "JobAggregator API", Version = "v1" });
+    c.EnableAnnotations();
 });
 
 var app = builder.Build();
