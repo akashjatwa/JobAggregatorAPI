@@ -3,8 +3,11 @@ using JobAggregator.Application.DTOs;
 
 namespace JobAggregator.Infrastructure.Scrapers;
 
-public class RemoteOkScraper
+public class RemoteOkScraper : IJobScraper
 {
+    public Task<IEnumerable<JobDto>> SearchAsync(string? query, CancellationToken cancellationToken)
+        => Task.FromResult<IEnumerable<JobDto>>(Enumerable.Empty<JobDto>());
+
     public IEnumerable<JobDto> Parse(string json)
     {
         if (string.IsNullOrWhiteSpace(json))

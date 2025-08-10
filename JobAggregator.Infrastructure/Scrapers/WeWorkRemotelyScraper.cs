@@ -3,8 +3,11 @@ using HtmlAgilityPack;
 
 namespace JobAggregator.Infrastructure.Scrapers;
 
-public class WeWorkRemotelyScraper
+public class WeWorkRemotelyScraper : IJobScraper
 {
+    public Task<IEnumerable<JobDto>> SearchAsync(string? query, CancellationToken cancellationToken)
+        => Task.FromResult<IEnumerable<JobDto>>(Enumerable.Empty<JobDto>());
+
     public IEnumerable<JobDto> Parse(string html)
     {
         if (string.IsNullOrWhiteSpace(html))
