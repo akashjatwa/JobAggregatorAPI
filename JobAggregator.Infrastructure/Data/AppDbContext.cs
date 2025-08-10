@@ -1,3 +1,4 @@
+using JobAggregator.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using JobAggregator.Infrastructure;
 
