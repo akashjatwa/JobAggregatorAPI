@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using JobAggregator.Infrastructure.Data;
 using JobAggregator.Application.Interfaces;
 using JobAggregator.Infrastructure.Services;
+using JobAggregator.Infrastructure.Scrapers;
 using Serilog;
 using Serilog.Formatting.Json;
 
@@ -24,8 +25,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IUserJobService, UserJobService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IJobService, JobSearchService>();
+builder.Services.AddScoped<IJobScraper, RemoteOkScraper>();
+builder.Services.AddScoped<IJobScraper, WeWorkRemotelyScraper>();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "JobAggregator API", Version = "v1" });
