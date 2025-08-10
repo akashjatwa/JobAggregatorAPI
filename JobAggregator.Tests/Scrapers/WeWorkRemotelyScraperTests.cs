@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using JobAggregator.Infrastructure.Scrapers;
 using Xunit;
 
