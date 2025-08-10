@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using JobAggregator.Infrastructure;
 
 namespace JobAggregator.Infrastructure.Data
 {
