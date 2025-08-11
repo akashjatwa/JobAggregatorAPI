@@ -1,3 +1,9 @@
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
+using JobAggregator.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Formatting.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +17,16 @@ using JobAggregator.Infrastructure.Services;
 using JobAggregator.Infrastructure.Scrapers;
 using Serilog;
 using Serilog.Formatting.Json;
+using Serilog;
+using Serilog.Formatting.Json;
+using JobAggregator.Application.Interfaces;
+using JobAggregator.Infrastructure.Caching;
+using JobAggregator.Infrastructure.Scrapers;
+using JobAggregator.Infrastructure.Services;
+using StackExchange.Redis;
+using System;
+using System.Net.Http;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,5 +67,15 @@ if (app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => true,
+    ResultStatusCodes =
+    {
+        [HealthStatus.Healthy] = 200,
+        [HealthStatus.Degraded] = 200,
+        [HealthStatus.Unhealthy] = 503
+    }
+});
 
 app.Run();
