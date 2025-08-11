@@ -23,6 +23,9 @@ using JobAggregator.Infrastructure.Services;
 using StackExchange.Redis;
 using System;
 using System.Net.Http;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +41,24 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHttpContextAccessor();
+
+var jwtSection = builder.Configuration.GetSection("Jwt");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidAudience = jwtSection["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
+        };
+    });
+builder.Services.AddAuthorization();
 
 // Register Redis or fallback to in-memory cache
 try
@@ -130,10 +151,13 @@ healthChecks.AddSqlServer(
 
 // Add a placeholder for Redis that reports as degraded
 healthChecks.AddCheck(
-    "redis-unavailable", 
-    () => HealthCheckResult.Degraded("Redis is not available"), 
+    "redis-unavailable",
+    () => HealthCheckResult.Degraded("Redis is not available"),
     tags: new[] { "cache" });
 }
+
+builder.Services.AddScoped<IUserJobService, UserJobService>();
+builder.Services.AddScoped<IExportService, ExportService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -150,6 +174,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

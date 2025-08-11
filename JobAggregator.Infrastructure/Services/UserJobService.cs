@@ -3,18 +3,26 @@ using JobAggregator.Application.Interfaces;
 using JobAggregator.Infrastructure.Data;
 using JobAggregator.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace JobAggregator.Infrastructure.Services
 {
     public class UserJobService : IUserJobService
     {
         private readonly AppDbContext _db;
-        private static readonly Guid DemoUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        // TODO: Replace demo user with JWT-authenticated user id
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserJobService(AppDbContext db)
+        public UserJobService(AppDbContext db, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private Guid GetUserId()
+        {
+            var userIdString = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.Parse(userIdString ?? throw new InvalidOperationException("User ID not found"));
         }
 
         public async Task<UserJobDto> SaveAsync(JobDto dto)
@@ -41,7 +49,8 @@ namespace JobAggregator.Infrastructure.Services
                 _db.Jobs.Add(job);
             }
 
-            var existingUserJob = await _db.UserJobs.FirstOrDefaultAsync(uj => uj.JobId == job.Id && uj.UserId == DemoUserId);
+            var userId = GetUserId();
+            var existingUserJob = await _db.UserJobs.FirstOrDefaultAsync(uj => uj.JobId == job.Id && uj.UserId == userId);
             if (existingUserJob != null)
             {
                 return Map(existingUserJob, job);
@@ -50,7 +59,7 @@ namespace JobAggregator.Infrastructure.Services
             var userJob = new UserJob
             {
                 Id = Guid.NewGuid(),
-                UserId = DemoUserId,
+                UserId = userId,
                 JobId = job.Id,
                 Status = UserJobStatus.Saved,
                 LikedAt = DateTimeOffset.UtcNow,
@@ -65,7 +74,8 @@ namespace JobAggregator.Infrastructure.Services
 
         public async Task<IEnumerable<UserJobDto>> ListAsync(string? status, string? company, string? location, string? tag, DateTimeOffset? from, DateTimeOffset? to, string? sort, int page, int pageSize)
         {
-            var query = _db.UserJobs.Include(uj => uj.Job).Where(uj => uj.UserId == DemoUserId);
+            var userId = GetUserId();
+            var query = _db.UserJobs.Include(uj => uj.Job).Where(uj => uj.UserId == userId);
 
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<UserJobStatus>(status, true, out var parsedStatus))
             {
@@ -110,7 +120,8 @@ namespace JobAggregator.Infrastructure.Services
 
         public async Task ApplyAsync(Guid id)
         {
-            var userJob = await _db.UserJobs.FirstOrDefaultAsync(uj => uj.Id == id && uj.UserId == DemoUserId);
+            var userId = GetUserId();
+            var userJob = await _db.UserJobs.FirstOrDefaultAsync(uj => uj.Id == id && uj.UserId == userId);
             if (userJob == null)
             {
                 return;
@@ -124,7 +135,8 @@ namespace JobAggregator.Infrastructure.Services
 
         public async Task DeleteAsync(Guid id)
         {
-            var userJob = await _db.UserJobs.FirstOrDefaultAsync(uj => uj.Id == id && uj.UserId == DemoUserId);
+            var userId = GetUserId();
+            var userJob = await _db.UserJobs.FirstOrDefaultAsync(uj => uj.Id == id && uj.UserId == userId);
             if (userJob == null)
             {
                 return;
