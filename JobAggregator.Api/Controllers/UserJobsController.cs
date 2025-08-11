@@ -3,18 +3,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using JobAggregator.Application.DTOs;
 using JobAggregator.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace JobAggregator.Api.Controllers;
 
 [ApiController]
 [Route("user/jobs")]
+[Authorize]
 public class UserJobsController : ControllerBase
 {
     private readonly IUserJobService _service;
     private readonly IExportService _exportService;
-    private static readonly Guid DemoUserId = Guid.Parse("00000000-0000-0000-0000-000000000001"); // TODO: Replace demo user with JWT-authenticated user id
 
     public UserJobsController(IUserJobService service, IExportService exportService)
     {
@@ -23,7 +25,6 @@ public class UserJobsController : ControllerBase
     }
 
     [HttpPost]
-    // TODO: use authenticated user from JWT instead of demo user
     public async Task<IActionResult> Save([FromBody] JobDto dto)
     {
         var result = await _service.SaveAsync(dto);
@@ -73,7 +74,10 @@ public class UserJobsController : ControllerBase
         Response.ContentType = "text/csv";
         Response.Headers.Add("Content-Disposition", "attachment; filename=applied_jobs.csv");
 
-        await foreach (var line in _exportService.StreamAppliedJobsCsvAsync(DemoUserId, cancellationToken))
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = Guid.Parse(userIdString ?? throw new InvalidOperationException("User ID not found"));
+
+        await foreach (var line in _exportService.StreamAppliedJobsCsvAsync(userId, cancellationToken))
         {
             await Response.WriteAsync(line + "\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
