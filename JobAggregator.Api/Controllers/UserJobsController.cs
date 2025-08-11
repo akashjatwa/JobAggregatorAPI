@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using JobAggregator.Application.DTOs;
 using JobAggregator.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;

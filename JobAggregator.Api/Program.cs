@@ -14,6 +14,9 @@ using Microsoft.EntityFrameworkCore;
 using JobAggregator.Infrastructure.Data;
 using JobAggregator.Application.Interfaces;
 using JobAggregator.Infrastructure.Services;
+using JobAggregator.Infrastructure.Scrapers;
+using Serilog;
+using Serilog.Formatting.Json;
 using Serilog;
 using Serilog.Formatting.Json;
 using JobAggregator.Application.Interfaces;
@@ -162,8 +165,11 @@ builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "JobAggregator API", Version = "v1" });
-    c.EnableAnnotations();
 });
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy())
+    .AddSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")!)
+    .AddRedis(builder.Configuration.GetConnectionString("RedisConnection")!);
 
 var app = builder.Build();
 
