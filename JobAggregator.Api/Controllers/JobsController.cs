@@ -1,4 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+
+using JobAggregator.Application.Interfaces;
+using JobAggregator.Application.DTOs;
+
+namespace JobAggregator.Api.Controllers
+{
 using JobAggregator.Application.DTOs;
 using JobAggregator.Application.Interfaces;
 using System.Collections.Generic;
@@ -15,6 +21,18 @@ namespace JobAggregator.Api.Controllers
     [Route("api/[controller]")]
     public class JobsController : ControllerBase
     {
+        private readonly IJobService _service;
+
+        public JobsController(IJobService service)
+        {
+            _service = service;
+        }
+
+        [HttpGet("search")]
+        public async Task<IEnumerable<JobDto>> Search([FromQuery] string? q, CancellationToken cancellationToken)
+            => await _service.SearchAsync(q, cancellationToken);
+    }
+}
         private readonly IJobSearchService _jobSearchService;
         private readonly ILogger<JobsController> _logger;
 
